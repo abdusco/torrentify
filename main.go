@@ -21,6 +21,7 @@ type torrent struct {
 	Name         string
 	Private      bool
 	Root         string
+	PieceLength  uint64
 }
 
 func main() {
@@ -60,6 +61,12 @@ func main() {
 				Usage:   "set torrent as private",
 				EnvVars: []string{"PRIVATE"},
 			},
+			&cli.Uint64Flag{
+				Name:    "piecelength",
+				Usage:   "Torrent piece length.",
+				EnvVars: []string{"PIECE_LENGTH"},
+				Value:   1024 * 1024,
+			},
 		},
 		HideHelpCommand: true,
 		Action: func(ctx *cli.Context) error {
@@ -74,6 +81,7 @@ func main() {
 				Name:         ctx.String("name"),
 				Private:      ctx.Bool("private"),
 				Root:         ctx.Args().Get(0),
+				PieceLength:  ctx.Uint64("piecelength"),
 			}
 
 			outputPath := ctx.Path("output")
@@ -112,7 +120,7 @@ func makeTorrent(t *torrent, w io.Writer) error {
 		mi.CreatedBy = t.CreatedBy
 	}
 	info := metainfo.Info{
-		PieceLength: 1024 * 1024,
+		PieceLength: int64(t.PieceLength),
 		Private:     &t.Private,
 	}
 	err := info.BuildFromFilePath(t.Root)
