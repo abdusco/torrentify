@@ -16,9 +16,9 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
       - name: Checkout code
-        uses: actions/checkout@v2
-      - name: generate version
+        uses: actions/checkout@v3
+      - name: Generate version
         run: |-
-          echo -n "v0.0.1" > version.txt
+          echo -n "testing" > version.txt
       - name: Test
         run: go test -v .

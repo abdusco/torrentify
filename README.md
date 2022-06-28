@@ -8,8 +8,6 @@ A mini CLI application to create torrent files from a directory.
 The remaining parameters are specified as flags,
 some of which can be set using environment variables.
 
-```
-
 ```shell
 > ./torrentify --help
 
