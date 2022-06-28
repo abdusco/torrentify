@@ -39,10 +39,12 @@ func main() {
 				Required: true,
 			},
 			&cli.PathFlag{
-				Name:     "output",
-				Aliases:  []string{"o"},
-				Usage:    "torrent file path",
-				Required: true,
+				Name:      "output",
+				Aliases:   []string{"o"},
+				Usage:     "Output path. Defaults to stdout",
+				Required:  true,
+				TakesFile: true,
+				Value:     "-",
 			},
 			&cli.StringFlag{
 				Name:  "comment",
