@@ -27,15 +27,15 @@ type torrent struct {
 func main() {
 	app := &cli.App{
 		Name:        "torrentify",
-		Usage:       "torrent creator",
+		Usage:       "Torrent creator",
 		ArgsUsage:   "<torrent root>",
 		Version:     version,
-		Description: "torrentify creates torrent files from a directory.",
+		Description: "torrentify creates torrent files from given root directory.",
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
 				Name:     "announce",
 				Aliases:  []string{"a"},
-				Usage:    "tracker announce urls",
+				Usage:    "Tracker announce URLs. Separate multiple URLs with commas.",
 				EnvVars:  []string{"ANNOUNCE_URL"},
 				Required: true,
 			},
@@ -49,16 +49,16 @@ func main() {
 			},
 			&cli.StringFlag{
 				Name:  "comment",
-				Usage: "torrent comment",
+				Usage: "Torrent comment",
 			},
 			&cli.StringFlag{
 				Name:    "createdby",
-				Usage:   "torrent creator name",
+				Usage:   "Torrent creator name",
 				EnvVars: []string{"CREATED_BY"},
 			},
 			&cli.BoolFlag{
 				Name:    "private",
-				Usage:   "set torrent as private",
+				Usage:   "Set torrent as private. Useful for private trackers",
 				EnvVars: []string{"PRIVATE"},
 			},
 			&cli.Uint64Flag{
