@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"time"
 )
 
 //go:embed version.txt
@@ -24,8 +25,22 @@ type torrent struct {
 	PieceLength  uint64
 }
 
-func main() {
-	app := &cli.App{
+type TorrentCreatorFunc func(t *torrent, w io.Writer) error
+type FileCreatorFunc func(path string) (io.Writer, error)
+type Runner func(args []string) error
+
+type App struct {
+	cli          Runner
+	torrentMaker TorrentCreatorFunc
+	fileCreator  FileCreatorFunc
+}
+
+func (a *App) Run(args []string) error {
+	return a.cli(args)
+}
+
+func NewApp(fileCreator FileCreatorFunc, torrentCreator TorrentCreatorFunc) *App {
+	cliApp := &cli.App{
 		Name:        "torrentify",
 		Usage:       "Torrent creator",
 		ArgsUsage:   "<torrent root>",
@@ -46,6 +61,11 @@ func main() {
 				Required:  true,
 				TakesFile: true,
 				Value:     "-",
+			},
+			&cli.StringFlag{
+				Name:     "name",
+				Usage:    "Torrent name",
+				Required: true,
 			},
 			&cli.StringFlag{
 				Name:  "comment",
@@ -70,9 +90,12 @@ func main() {
 		},
 		HideHelpCommand: true,
 		Action: func(ctx *cli.Context) error {
-			if ctx.Args().Len() != 1 {
+			if ctx.NArg() != 1 {
+				log.Printf("root directory is not specified")
 				return cli.ShowAppHelp(ctx)
 			}
+
+			rootDir := ctx.Args().Get(0)
 
 			t := &torrent{
 				AnnounceUrls: ctx.StringSlice("announce"),
@@ -80,29 +103,45 @@ func main() {
 				CreatedBy:    ctx.String("createdby"),
 				Name:         ctx.String("name"),
 				Private:      ctx.Bool("private"),
-				Root:         ctx.Args().Get(0),
+				Root:         rootDir,
 				PieceLength:  ctx.Uint64("piecelength"),
 			}
 
 			outputPath := ctx.Path("output")
-			var w io.Writer
-			if outputPath == "-" {
-				w = os.Stdout
-			} else {
-				f, err := os.Create(outputPath)
-				if err != nil {
-					return errors.Wrap(err, "create file")
-				}
-				w = f
+			w, err := fileCreator(outputPath)
+			if err != nil {
+				return err
 			}
 
-			return makeTorrent(t, w)
+			return torrentCreator(t, w)
 		},
 	}
+	return &App{
+		cli: cliApp.Run,
+	}
+}
+
+func main() {
+	app := NewApp(
+		createFile,
+		makeTorrent,
+	)
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func createFile(path string) (io.Writer, error) {
+	if path == "-" {
+		return os.Stdout, nil
+	}
+
+	f, err := os.Create(path)
+	if err != nil {
+		return nil, errors.Wrap(err, "create file")
+	}
+	return f, nil
 }
 
 func makeTorrent(t *torrent, w io.Writer) error {
@@ -112,13 +151,18 @@ func makeTorrent(t *torrent, w io.Writer) error {
 	for _, a := range t.AnnounceUrls {
 		mi.AnnounceList = append(mi.AnnounceList, []string{a})
 	}
-	mi.SetDefaults()
+
+	mi.CreationDate = time.Now().Unix()
 	if len(t.Comment) > 0 {
 		mi.Comment = t.Comment
 	}
+
 	if len(t.CreatedBy) > 0 {
 		mi.CreatedBy = t.CreatedBy
+	} else {
+		mi.CreatedBy = "torrentify"
 	}
+
 	info := metainfo.Info{
 		PieceLength: int64(t.PieceLength),
 		Private:     &t.Private,
@@ -127,6 +171,7 @@ func makeTorrent(t *torrent, w io.Writer) error {
 	if err != nil {
 		return errors.Wrap(err, "hash files")
 	}
+
 	if t.Name != "" {
 		info.Name = t.Name
 	}
