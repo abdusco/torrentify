@@ -14,21 +14,25 @@ some of which can be set using environment variables.
 > ./torrentify --help
 
 NAME:
-   torrentify - Torrent creator
+   torrentify - torrent creator
 
 USAGE:
    torrentify [global options] <torrent root>
+
+VERSION:
+   v0.0.1-fa5d041
 
 DESCRIPTION:
    torrentify creates torrent files from given root directory.
 
 GLOBAL OPTIONS:
-   --announce value, -a value  Tracker announce URLs. Separate multiple URLs with commas.  (accepts multiple inputs) [$ANNOUNCE_URL]
-   --comment value             Torrent comment
-   --createdby value           Torrent creator name [$CREATED_BY]
+   --announce value, -a value  tracker announce URLs, separated with commas.  (accepts multiple inputs) [$ANNOUNCE_URL]
+   --comment value, -c value   torrent comment
+   --createdby value           torrent creator name [$CREATED_BY]
    --help, -h                  show help (default: false)
-   --output value, -o value    Output path. Defaults to stdout (default: "-")
-   --piecelength value         Torrent piece length. (default: 1048576) [$PIECE_LENGTH]
-   --private                   Set torrent as private. Useful for private trackers (default: false) [$PRIVATE]
+   --name value, -n value      torrent name
+   --output value, -o value    output path, defaults to stdout (default: "-")
+   --piecelength value         torrent piece length in bytes. (default: 1048576) [$PIECE_LENGTH]
+   --private                   set torrent as private (useful for private trackers) (default: false) [$PRIVATE]
    --version, -v               print the version (default: false)
 ```
