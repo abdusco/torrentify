@@ -13,16 +13,16 @@ func TestApp_Run(t *testing.T) {
 		var parsedTorrent torrent
 		buf := &bytes.Buffer{}
 
-		app := NewApp(
-			func(path string) (io.Writer, error) {
-				return buf, nil
-			},
-			func(t *torrent, w io.Writer) error {
+		app := &App{
+			torrentCreator: func(t *torrent, w io.Writer) error {
 				parsedTorrent = *t
 				_, err := w.Write([]byte("torrent"))
 				return err
 			},
-		)
+			fileCreator: func(path string) (io.Writer, error) {
+				return buf, nil
+			},
+		}
 
 		_ = os.Setenv("CREATED_BY", "tester")
 		args := []string{"", "-announce", "http://tracker1.com,http://tracker2.com", "-output", "test.torrent", "-name", "test torrent", "/path/to/root"}

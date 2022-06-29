@@ -12,6 +12,17 @@ import (
 	"time"
 )
 
+func main() {
+	app := &App{
+		torrentCreator: makeTorrent,
+		fileCreator:    createFile,
+	}
+
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
+	}
+}
+
 //go:embed version.txt
 var version string
 
@@ -27,19 +38,13 @@ type torrent struct {
 
 type TorrentCreatorFunc func(t *torrent, w io.Writer) error
 type FileCreatorFunc func(path string) (io.Writer, error)
-type Runner func(args []string) error
 
 type App struct {
-	cli          Runner
-	torrentMaker TorrentCreatorFunc
-	fileCreator  FileCreatorFunc
+	torrentCreator TorrentCreatorFunc
+	fileCreator    FileCreatorFunc
 }
 
 func (a *App) Run(args []string) error {
-	return a.cli(args)
-}
-
-func NewApp(fileCreator FileCreatorFunc, torrentCreator TorrentCreatorFunc) *App {
 	cliApp := &cli.App{
 		Name:        "torrentify",
 		Usage:       "torrent creator",
@@ -55,12 +60,13 @@ func NewApp(fileCreator FileCreatorFunc, torrentCreator TorrentCreatorFunc) *App
 				Required: true,
 			},
 			&cli.PathFlag{
-				Name:      "output",
-				Aliases:   []string{"o"},
-				Usage:     "output path, defaults to stdout",
-				Required:  true,
-				TakesFile: true,
-				Value:     "-",
+				Name:        "output",
+				Aliases:     []string{"o"},
+				Usage:       "output path",
+				DefaultText: "stdout",
+				Required:    true,
+				TakesFile:   true,
+				Value:       "-",
 			},
 			&cli.StringFlag{
 				Name:     "name",
@@ -110,28 +116,15 @@ func NewApp(fileCreator FileCreatorFunc, torrentCreator TorrentCreatorFunc) *App
 			}
 
 			outputPath := ctx.Path("output")
-			w, err := fileCreator(outputPath)
+			w, err := a.fileCreator(outputPath)
 			if err != nil {
 				return err
 			}
 
-			return torrentCreator(t, w)
+			return a.torrentCreator(t, w)
 		},
 	}
-	return &App{
-		cli: cliApp.Run,
-	}
-}
-
-func main() {
-	app := NewApp(
-		createFile,
-		makeTorrent,
-	)
-
-	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
-	}
+	return cliApp.Run(args)
 }
 
 func createFile(path string) (io.Writer, error) {
